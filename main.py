@@ -3,6 +3,8 @@
 
 import random
 import re
+import pandas as pd
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 dataset_raw_path = "data/dataset_raw.csv"
 
@@ -24,3 +26,6 @@ def create_set(path) :
     setY.append(elem[1])
   return setX, setY
 
+def encode_set_TFIDF(set_to_encode) :
+  vectorizer = TfidfVectorizer()
+  return vectorizer.fit_transform(set_to_encode)
