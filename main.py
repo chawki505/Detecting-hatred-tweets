@@ -5,6 +5,8 @@ import random
 import re
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.neighbors import KNeighborsClassifier
+
 import string
 import nltk
 import contractions
@@ -91,5 +93,7 @@ def create_set(path):
     return set_x, set_y
 
 
-if __name__ == '__main__':
-    pass
+
+def k_nearest_neghbours(trainX, trainY, K) :
+  model = KNeighborsClassifier(n_neighbors = k)
+  model.fit(trainX, trainY)
