@@ -3,11 +3,13 @@
 
 import random
 import re
-import pandas as pd
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
 
+#for testing
+import pandas as pd
+import matplotlib.pyplot as plt
 
 import string
 import nltk
@@ -22,24 +24,12 @@ nltk.download('wordnet')
 from nltk.stem import WordNetLemmatizer
 
 lemm = WordNetLemmatizer()
+tfdidf_vectorizer = TfidfVectorizer(analyzer="word")
 
 dataset_raw_path = "data/dataset_raw.csv"
-train_path = "data/train.csv"
-test_path = "data/test.csv"
 
 def encode_set(set_to_encode):
-    cv = CountVectorizer(analyzer='word') 
-    return cv.fit_transform(set_to_encode)
-
-def prepare_dataset():
-    out_test = open(test_path, 'w')
-    out_train = open(train_path, 'w')
-    for line in open(dataset_raw_path, 'r').readlines() :
-        if random.randint(0, 1):
-            out_test.write(line)
-        else:
-            out_train.write(line)
-
+    return tfdidf_vectorizer.fit_transform(set_to_encode)
 
 def normalisation(text: str) -> str:
     # make str low
@@ -94,23 +84,36 @@ def create_set(path):
 
 
 
-def k_nearest_neghbours(trainX, trainY, K, testX, testY) :
-  model = KNeighborsClassifier(n_neighbors = K)
+def knn_predict(trainX, trainY, test_string) :
+  model = KNeighborsClassifier(n_neighbors = 1)
   clf = model.fit(trainX, trainY)
-  return clf.score(testX, testY)
+  test= tfdidf_vectorizer.transform([normalisation(test_string)])
+  return model.predict(test)[0]
 
-# TODO : find best K
+
+def knn_find_best_k(trainX, trainY, testX, testY) :
+  scores = []
+  for i in range(1, 35) :
+    model = KNeighborsClassifier(n_neighbors = i)
+    model.fit(trainX, trainY)
+    scores.append(model.score(testX, testY))
+  plt.plot(scores)
+  plt.show()
+
+# best K = 1
 def knn_score(trainX, trainY, testX, testY) :
-  return k_nearest_neghbours(trainX, trainY, 5, testX, testY)
+  model = KNeighborsClassifier(n_neighbors = 1)
+  model.fit(trainX, trainY)
+  return model.score(testX, testY)
 
 
 if __name__ == "__main__":
-  prepare_dataset()
-  trainX, trainY = create_set(train_path)
-  testX, testY = create_set(test_path)
-  trainX = encode_set(trainX)
-  x_train, x_test, y_train, y_test = train_test_split(trainX, trainY, test_size=0.3)
+  X, Y = create_set(dataset_raw_path)
+  X = encode_set(X)  
+  x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=0.3)
+  test_tweet = "white people"
   # Testing KNN
-  print(knn_score(x_train, y_train, x_test, y_test))
+  print("KNN score = ", knn_score(x_train, y_train, x_test, y_test))
+  print("Predicted", knn_predict(x_train, y_train, test_tweet))
 
 
