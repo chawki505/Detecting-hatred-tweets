@@ -5,6 +5,7 @@ import random
 import re
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.svm import SVC
 from sklearn.model_selection import train_test_split
 
 #for testing
@@ -107,13 +108,28 @@ def knn_score(trainX, trainY, testX, testY) :
   return model.score(testX, testY)
 
 
+def svm_predict(trainX, trainY, test_string) :
+  model = SVC()
+  model.fit(trainX, trainY)
+  test= tfdidf_vectorizer.transform([normalisation(test_string)])
+  return model.predict(test)[0]
+
+def svm_score(trainX, trainY, testX, testY) :
+  model = SVC()
+  model.fit(trainX, trainY)
+  return model.score(testX, testY)
+
+
 if __name__ == "__main__":
   X, Y = create_set(dataset_raw_path)
   X = encode_set(X)  
   x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=0.3)
-  test_tweet = "white people"
+  test_tweet = "beautiful sign by vendor"
   # Testing KNN
   print("KNN score = ", knn_score(x_train, y_train, x_test, y_test))
-  print("Predicted", knn_predict(x_train, y_train, test_tweet))
+  print("Predicted", knn_predict(x_train, y_train, test_tweet), " for \"", test_tweet, "\"")
+  # Testing SVM
+  print("SVM score = ", svm_score(x_train, y_train, x_test, y_test))
+  print("Predicted", svm_predict(x_train, y_train, test_tweet), " for \"", test_tweet, "\"")
 
 
