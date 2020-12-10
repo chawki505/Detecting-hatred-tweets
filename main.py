@@ -9,8 +9,10 @@ from sklearn.naive_bayes import MultinomialNB
 
 # utils
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.svm import SVC
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, classification_report
+from sklearn.model_selection import GridSearchCV
 
 # for testing
 import matplotlib.pyplot as plt
@@ -94,6 +96,7 @@ def create_set(path):
     return set_x, set_y
 
 
+
 def knn_predict(trainX, trainY, test_string):
     model = KNeighborsClassifier(n_neighbors=1)
     model.fit(trainX, trainY)
@@ -101,12 +104,17 @@ def knn_predict(trainX, trainY, test_string):
     return model.predict(test)[0]
 
 
-# fonction pour predire le label d'un tweet
 def nb_predict(trainX, trainY, test_string):
     model = MultinomialNB(alpha=0.1)
     model.fit(trainX, trainY)
     test = tfdidf_vectorizer.transform([normalisation(test_string)])
     return model.predict(test)[0]
+
+def svm_predict(trainX, trainY, test_string) :
+  model = SVC()
+  model.fit(trainX, trainY)
+  test= tfdidf_vectorizer.transform([normalisation(test_string)])
+  return model.predict(test)[0]
 
 
 def knn_find_best_k(trainX, trainY, testX, testY):
@@ -132,6 +140,16 @@ def nb_find_best_alpha(trainX, trainY, testX, testY):
     plt.show()
 
 
+def svm_find_best_c(trainX, trainY) :
+  svc = SVC()
+  param_grid_for_grid_search = {'kernel': ['rbf'], 'C':[1, 10]}
+  model = GridSearchCV(svc, param_grid_for_grid_search)
+  model.fit(trainX, trainY)
+  # print best parameter after tuning 
+  print(model.best_params_) 
+  # print how our model looks after hyper-parameter tuning 
+  print(model.best_estimator_) 
+
 # best K = 1
 def knn_score(trainX, trainY, testX, testY):
     model = KNeighborsClassifier(n_neighbors=1)
@@ -145,6 +163,13 @@ def nb_score(trainX, trainY, testX, testY):
     model.fit(trainX, trainY)
     return model.score(testX, testY)
 
+# Best c from [1,10] = 10
+def svm_score(trainX, trainY, testX, testY) :
+  model = SVC()
+  model.fit(trainX, trainY)
+  return model.score(testX, testY)
+
+
 
 if __name__ == "__main__":
     X, Y = create_set(dataset_raw_path)
@@ -156,19 +181,18 @@ if __name__ == "__main__":
     x_train, x_test, y_train, y_test = train_test_split(X, Y)
 
     print("Avant clean : ", test_tweet)
-    corpus_test = normalisation(test_tweet)
-    print("Apres clean : ", corpus_test)
+    print("Apres clean : ", normalisation(test_tweet))
+
 
     # Testing KNN
     print("Testing KNN")
-    print("tweet : ", test_tweet)
     print("KNN score = ", knn_score(x_train, y_train, x_test, y_test))
-    print("Predicted", knn_predict(x_train, y_train, test_tweet))
-
+    print("Predicted", knn_predict(x_train, y_train, test_tweet), " for \"", test_tweet, "\"")
+    # Testing SVM
+    print("Testing SVM")
+    print("SVM score = ", svm_score(x_train, y_train, x_test, y_test))
+    print("Predicted", svm_predict(x_train, y_train, test_tweet), " for \"", test_tweet, "\"")
     # Testing MB
     print("Testing NB")
-    print("tweet : ", test_tweet)
     print("NB score = ", nb_score(x_train, y_train, x_test, y_test))
-    print("Predicted", nb_predict(x_train, y_train, test_tweet))
-
-    nb_find_best_alpha(x_train, y_train, x_test, y_test)
+    print("Predicted", nb_predict(x_train, y_train, test_tweet), " for \"", test_tweet, "\"")
