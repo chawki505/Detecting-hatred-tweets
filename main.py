@@ -7,6 +7,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.svm import SVC
 from sklearn.model_selection import train_test_split
+from sklearn.model_selection import GridSearchCV
 
 #for testing
 import pandas as pd
@@ -87,11 +88,11 @@ def create_set(path):
 
 def knn_predict(trainX, trainY, test_string) :
   model = KNeighborsClassifier(n_neighbors = 1)
-  clf = model.fit(trainX, trainY)
+  model.fit(trainX, trainY)
   test= tfdidf_vectorizer.transform([normalisation(test_string)])
   return model.predict(test)[0]
 
-
+# Find best K using elbow method
 def knn_find_best_k(trainX, trainY, testX, testY) :
   scores = []
   for i in range(1, 35) :
@@ -113,6 +114,18 @@ def svm_predict(trainX, trainY, test_string) :
   model.fit(trainX, trainY)
   test= tfdidf_vectorizer.transform([normalisation(test_string)])
   return model.predict(test)[0]
+
+# Best c from [1,10] = 10
+def svm_find_best_c(trainX, trainY) :
+  svc = SVC()
+  param_grid_for_grid_search = {'kernel': ['rbf'], 'C':[1, 10]}
+  model = GridSearchCV(svc, param_grid_for_grid_search)
+  model.fit(trainX, trainY)
+  # print best parameter after tuning 
+  print(model.best_params_) 
+  # print how our model looks after hyper-parameter tuning 
+  print(model.best_estimator_) 
+
 
 def svm_score(trainX, trainY, testX, testY) :
   model = SVC()
