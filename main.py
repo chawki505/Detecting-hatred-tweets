@@ -13,6 +13,8 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.svm import SVC
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import KFold
 
 # for testing
 import matplotlib.pyplot as plt
@@ -38,9 +40,12 @@ tfdidf_vectorizer = TfidfVectorizer(analyzer="word", max_features=7000)
 
 dataset_raw_path = "data/dataset_raw.csv"
 
-knn_model = KNeighborsClassifier(n_neighbors=1)
+CONST_BEST_K = 1
+CONST_BEST_C = 10
+
+knn_model = KNeighborsClassifier(n_neighbors=CONST_BEST_K)
 nb_model = MultinomialNB(alpha=0.1)
-svm_model = SVC(C=10)
+svm_model = SVC(C=CONST_BEST_C, kernel='linear')
 
 
 def encode_set(set_to_encode):
@@ -140,6 +145,8 @@ def knn_score(test_x, test_y):
 def svm_score(test_x, test_y):
     return svm_model.score(test_x, test_y)
 
+def algo_crossval_score(clf, x, y, subset_number=5):
+  return cross_val_score(clf, x, y, cv=subset_number).mean()
 
 # function de prediction pour naive bayes
 def nb_predict(test_string):
@@ -195,7 +202,7 @@ if __name__ == "__main__":
     test_tweet = sys.argv[1] if len(
         sys.argv) > 1 else "@user why not @user mocked obama for being black.  @user @user @user @user #brexit"
 
-    x_train, x_test, y_train, y_test = train_test_split(X, Y)
+    x_train, x_test, y_train, y_test = train_test_split(X, Y, shuffle=True, test_size=0.3)
 
     # init_all(x_train, y_train)
 
@@ -203,16 +210,19 @@ if __name__ == "__main__":
     # Testing KNN
     print("Testing KNN")
     print("KNN score = ", knn_score(x_test, y_test))
+    print("KNN score with cross validation = ", algo_crossval_score(KNeighborsClassifier(n_neighbors=CONST_BEST_K),X, Y))
     print("Predicted", knn_predict(test_tweet), " for \"", test_tweet, "\"")
 
     nb_init(x_train, y_train)
     # Testing MB
     print("Testing NB")
     print("NB score = ", nb_score(x_test, y_test))
+    print("NB score with cross validation = ", algo_crossval_score(MultinomialNB(alpha=0.1),X, Y))
     print("Predicted", nb_predict(test_tweet), " for \"", test_tweet, "\"")
 
-    # svm_init(x_train, y_train)
+    svm_init(x_train, y_train)
     # Testing SVM
-    # print("Testing SVM")
-    # print("SVM score = ", svm_score(x_test, y_test))
-    # print("Predicted", svm_predict(test_tweet), " for \"", test_tweet, "\"")
+    print("Testing SVM")
+    print("SVM score = ", svm_score(x_test, y_test))
+    print("SVM score with cross validation = ", algo_crossval_score(SVC(kernel='linear', C=CONST_BEST_C),X, Y))
+    print("Predicted", svm_predict(test_tweet), " for \"", test_tweet, "\"")
