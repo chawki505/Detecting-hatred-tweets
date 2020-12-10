@@ -205,7 +205,47 @@ def svm_find_best_c(train_x, train_y):
     print(model.best_estimator_)
 
 
+def show_algorithms_comparison(without_cv=[88, 98, 89], with_cv=[77, 98, 94]):
+    labels = ['K Nearest Neighbors', 'Naive Bayes', 'Support Vector Machine']
+
+    x = np.arange(len(labels))  # the label locations
+    width = 0.30  # the width of the bars
+
+    fig, ax = plt.subplots()
+    rects1 = ax.bar(x - width / 2, without_cv, width, label='Without Cross validation')
+    rects2 = ax.bar(x + width / 2, with_cv, width, label='With Cross validation')
+
+    # Add some text for labels, title and custom x-axis tick labels, etc.
+    ax.set_ylabel('Scores')
+    ax.set_title('Show algorithms comparison')
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels)
+    ax.legend()
+
+    ax.margins(0.2)
+
+    def autolabel(rects):
+        """Attach a text label above each bar in *rects*, displaying its height."""
+        for rect in rects:
+            height = rect.get_height()
+            ax.annotate('{}'.format(height),
+                        xy=(rect.get_x() + rect.get_width() / 2, height),
+                        xytext=(0, 3),  # 3 points vertical offset
+                        textcoords="offset points",
+                        ha='center', va='bottom')
+
+    autolabel(rects1)
+    autolabel(rects2)
+
+    fig.tight_layout()
+
+    plt.show()
+
+
 if __name__ == "__main__":
+    with_cv = []
+    without_cv = []
+
     print("Creating set X, Y ...")
     X, Y = create_set(dataset_raw_path)
     print("\t - creating set X, Y: done !")
@@ -228,9 +268,11 @@ if __name__ == "__main__":
     knn_init(x_train, y_train)
     # Testing KNN
     print("\nTesting KNN ...")
-    score = round(knn_score(x_test, y_test), 4) * 100
+    score = round(knn_score(x_test, y_test) * 100, 2)
+    without_cv.append(score)
     print("\t - knn score = ", score, "%")
-    score = round(algo_crossval_score(KNeighborsClassifier(n_neighbors=CONST_BEST_K), X, Y), 4) * 100
+    score = round(algo_crossval_score(KNeighborsClassifier(n_neighbors=CONST_BEST_K), X, Y) * 100, 2)
+    with_cv.append(score)
     print("\t - knn cross validation score = ", score, "%")
     predict = knn_predict(test_tweet)
     print("\t - predicted [", predict, "]")
@@ -240,9 +282,11 @@ if __name__ == "__main__":
     nb_init(x_train, y_train)
     # Testing MB
     print("\nTesting NB ...")
-    score = round(nb_score(x_test, y_test), 4) * 100
+    score = round(nb_score(x_test, y_test) * 100, 2)
+    without_cv.append(score)
     print("\t - naive bayes score = ", score, "%")
-    score = round(algo_crossval_score(MultinomialNB(alpha=CONST_BEST_ALPHA), X, Y), 4) * 100
+    score = round(algo_crossval_score(MultinomialNB(alpha=CONST_BEST_ALPHA), X, Y) * 100, 2)
+    with_cv.append(score)
     print("\t - naive bayes cross validation score = ", score, "%")
     predict = nb_predict(test_tweet)
     print("\t - predicted [", predict, "]")
@@ -252,9 +296,13 @@ if __name__ == "__main__":
     svm_init(x_train, y_train)
     # Testing SVM
     print("\nTesting SVM ...")
-    score = round(svm_score(x_test, y_test), 4) * 100
+    score = round(svm_score(x_test, y_test) * 100, 2)
+    without_cv.append(score)
     print("\t - svm score = ", score, "%")
-    score = round(algo_crossval_score(SVC(kernel='linear', C=CONST_BEST_C), X, Y), 4) * 100
+    score = round(algo_crossval_score(SVC(kernel='linear', C=CONST_BEST_C), X, Y) * 100, 2)
+    with_cv.append(score)
     print("\t - svm cross validation score = ", score, "%")
     predict = svm_predict(test_tweet)
     print("\t - predicted [", predict, "]")
+
+    show_algorithms_comparison(without_cv, with_cv)
