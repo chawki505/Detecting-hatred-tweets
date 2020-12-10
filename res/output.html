@@ -1,0 +1,30 @@
+<html>
+    <head>
+        <title>Result</title>
+    </head>
+    <body>
+        <h1>Result</h1>
+        <h3>TWEET : {{ tweet }}</h3>
+        <ul>
+            <li>
+                <p>
+                   <b>Naive Bayes</b> predicted that your tweet {% if predict_nb == True %} <b>contains</b> {% else %} <b>doesn't contain</b> {% end %} hate speech.
+                </p>
+           </li>
+           <li>
+               <p>
+                <b>K Nearest Neighbours</b> predicted that your tweet {% if predict_knn == True %} <b>contains</b> {% else %} <b>doesn't contain</b> {% end %} hate speech.
+               </p>
+          </li>
+          <li>
+               <p>
+                <b>SVM</b> predicted that your tweet {% if predict_svm == True %} <b>contains</b> {% else %} <b>doesn't contain</b> {% end %} hate speech.
+               </p>
+           </li>
+        </ul>
+        <br>
+        <form action="/fdd" method="get">
+            <button type=submit">Go back</button>
+         </form>
+    </body>
+</html>

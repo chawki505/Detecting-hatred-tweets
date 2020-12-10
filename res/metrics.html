@@ -1,0 +1,35 @@
+<html>
+   <head>
+      <title>METRICS</title>
+   </head>
+   <body>
+       <h1>Metrics</h1>
+     <ul>
+         <li>
+             <p>
+                <b>Naive Bayes : </b><br>
+                Without cross validation : {{ nb }}% accuracy<br>
+                With cross validation : {{ nb_cv }}% accuracy
+             </p>
+        </li>
+        <li>
+            <p>
+               <b>K Nearest Neghbours : </b><br>
+               Without cross validation : {{ knn }}% accuracy<br>
+               With cross validation : {{ knn_cv }}% accuracy
+            </p>
+       </li>
+       <li>
+            <p>
+            <b>SVM : </b><br>
+            Without cross validation : {{ svm }}% accuracy<br>
+            With cross validation : {{ svm_cv }}% accuracy
+            </p>
+        </li>
+     </ul>
+     <br>
+     <form action="/fdd" method="get">
+         <button type=submit">Go back</button>
+      </form>
+   </body>
+ </html>
