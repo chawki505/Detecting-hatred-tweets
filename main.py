@@ -13,6 +13,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import GridSearchCV
 from nltk import pos_tag, word_tokenize
+from sklearn.model_selection import cross_val_score
 
 # for testing
 import matplotlib.pyplot as plt
@@ -38,9 +39,13 @@ tfdidf_vectorizer = TfidfVectorizer()
 
 dataset_raw_path = "data/dataset_raw.csv"
 
-knn_model = KNeighborsClassifier(n_neighbors=1)
-nb_model = MultinomialNB(alpha=0.2)
-svm_model = SVC(C=10)
+CONST_BEST_K = 1
+CONST_BEST_C = 10
+CONST_BEST_ALPHA = 0.2
+
+knn_model = KNeighborsClassifier(n_neighbors=CONST_BEST_K)
+nb_model = MultinomialNB(alpha=CONST_BEST_ALPHA)
+svm_model = SVC(C=CONST_BEST_C, kernel='linear')
 
 
 def encode_set(set_to_encode):
@@ -140,6 +145,8 @@ def knn_score(test_x, test_y):
 def svm_score(test_x, test_y):
     return svm_model.score(test_x, test_y)
 
+def algo_crossval_score(clf, x, y, subset_number=5):
+  return cross_val_score(clf, x, y, cv=subset_number).mean()
 
 # function de prediction pour naive bayes
 def nb_predict(test_string):
@@ -221,7 +228,8 @@ if __name__ == "__main__":
     # Testing KNN
     print("\nTesting KNN ...")
     print("\tknn score = ", round(knn_score(x_test, y_test), 4) * 100, "%")
-    print("\tpredicted [", knn_predict(test_tweet), "] for \"", test_tweet, "\"")
+    print("\tknn cross validation score = ", round(algo_crossval_score(KNeighborsClassifier(n_neighbors=CONST_BEST_K), X, Y), 4) * 100, "%")
+    print("\tpredicted [", knn_predict(test_tweet))
 
     # knn_find_best_k(x_train, y_train, x_test, y_test)
 
@@ -229,7 +237,8 @@ if __name__ == "__main__":
     # Testing MB
     print("\nTesting NB ...")
     print("\tnaive bayes score = ", round(nb_score(x_test, y_test), 4) * 100, "%")
-    print("\tpredicted [", nb_predict(test_tweet), "] for \"", test_tweet, "\"")
+    print("\tnaive bayes cross validation score = ", round(algo_crossval_score(MultinomialNB(alpha=CONST_BEST_ALPHA), X, Y), 4) * 100, "%")
+    print("\tpredicted [", nb_predict(test_tweet))
 
     # nb_find_best_alpha(x_train, y_train, x_test, y_test)
 
@@ -237,4 +246,5 @@ if __name__ == "__main__":
     # Testing SVM
     print("\nTesting SVM ...")
     print("\tsvm score = ", round(svm_score(x_test, y_test), 4) * 100, "%")
-    print("\tpredicted [", svm_predict(test_tweet), "] for \"", test_tweet, "\"")
+    print("\tsvm cross validation score = ", round(algo_crossval_score(SVC(kernel='linear', C=CONST_BEST_C), X, Y), 4) * 100, "%")
+    print("\tpredicted [", svm_predict(test_tweet))
