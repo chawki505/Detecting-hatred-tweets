@@ -165,7 +165,7 @@ def nb_score(trainX, trainY, testX, testY):
 
 # Best c from [1,10] = 10
 def svm_score(trainX, trainY, testX, testY) :
-  model = SVC()
+  model = SVC(C=10)
   model.fit(trainX, trainY)
   return model.score(testX, testY)
 
