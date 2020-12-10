@@ -7,13 +7,13 @@ import re
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.svm import SVC
+from sklearn.model_selection import cross_val_score
+from nltk import pos_tag, word_tokenize
 
 # utils
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import GridSearchCV
-from nltk import pos_tag, word_tokenize
-from sklearn.model_selection import cross_val_score
 
 # for testing
 import matplotlib.pyplot as plt
@@ -145,8 +145,10 @@ def knn_score(test_x, test_y):
 def svm_score(test_x, test_y):
     return svm_model.score(test_x, test_y)
 
+
 def algo_crossval_score(clf, x, y, subset_number=5):
-  return cross_val_score(clf, x, y, cv=subset_number).mean()
+    return cross_val_score(clf, x, y, cv=subset_number).mean()
+
 
 # function de prediction pour naive bayes
 def nb_predict(test_string):
@@ -204,47 +206,55 @@ def svm_find_best_c(train_x, train_y):
 
 
 if __name__ == "__main__":
-    print("Create set X, Y ...")
+    print("Creating set X, Y ...")
     X, Y = create_set(dataset_raw_path)
-    print("\t create set X, Y: done !")
+    print("\t - creating set X, Y: done !")
 
-    print("\nEncode set X ...")
+    print("\nEncoding set X ...")
     X = encode_set(X)
-    print("\t encode set X: done !")
+    print("\t - encoding set X: done !")
 
     test_tweet = sys.argv[1] if len(
         sys.argv) < 1 else "@user why not @user mocked obama for being black.  @user @user @user @user #brexit"
 
     print("\nSpliting X in train and test ...")
     x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=0.20)
-    print("\ttrain, test spliting : done !")
+    print("\t - train, test spliting : done !")
 
-    print("\nCleanning input tweet to predict ...")
-    print("\tavant clean :", test_tweet)
-    print("\tapres clean :", normalisation(test_tweet))
-    # init_all(x_train, y_train)
+    print("\nCleaning input tweet to predict ...")
+    print("\t - before cleaning :", test_tweet)
+    print("\t - after cleaning :", normalisation(test_tweet))
 
     knn_init(x_train, y_train)
     # Testing KNN
     print("\nTesting KNN ...")
-    print("\tknn score = ", round(knn_score(x_test, y_test), 4) * 100, "%")
-    print("\tknn cross validation score = ", round(algo_crossval_score(KNeighborsClassifier(n_neighbors=CONST_BEST_K), X, Y), 4) * 100, "%")
-    print("\tpredicted [", knn_predict(test_tweet))
+    score = round(knn_score(x_test, y_test), 4) * 100
+    print("\t - knn score = ", score, "%")
+    score = round(algo_crossval_score(KNeighborsClassifier(n_neighbors=CONST_BEST_K), X, Y), 4) * 100
+    print("\t - knn cross validation score = ", score, "%")
+    predict = knn_predict(test_tweet)
+    print("\t - predicted [", predict, "]")
 
     # knn_find_best_k(x_train, y_train, x_test, y_test)
 
     nb_init(x_train, y_train)
     # Testing MB
     print("\nTesting NB ...")
-    print("\tnaive bayes score = ", round(nb_score(x_test, y_test), 4) * 100, "%")
-    print("\tnaive bayes cross validation score = ", round(algo_crossval_score(MultinomialNB(alpha=CONST_BEST_ALPHA), X, Y), 4) * 100, "%")
-    print("\tpredicted [", nb_predict(test_tweet))
+    score = round(nb_score(x_test, y_test), 4) * 100
+    print("\t - naive bayes score = ", score, "%")
+    score = round(algo_crossval_score(MultinomialNB(alpha=CONST_BEST_ALPHA), X, Y), 4) * 100
+    print("\t - naive bayes cross validation score = ", score, "%")
+    predict = nb_predict(test_tweet)
+    print("\t - predicted [", predict, "]")
 
     # nb_find_best_alpha(x_train, y_train, x_test, y_test)
 
     svm_init(x_train, y_train)
     # Testing SVM
     print("\nTesting SVM ...")
-    print("\tsvm score = ", round(svm_score(x_test, y_test), 4) * 100, "%")
-    print("\tsvm cross validation score = ", round(algo_crossval_score(SVC(kernel='linear', C=CONST_BEST_C), X, Y), 4) * 100, "%")
-    print("\tpredicted [", svm_predict(test_tweet))
+    score = round(svm_score(x_test, y_test), 4) * 100
+    print("\t - svm score = ", score, "%")
+    score = round(algo_crossval_score(SVC(kernel='linear', C=CONST_BEST_C), X, Y), 4) * 100
+    print("\t - svm cross validation score = ", score, "%")
+    predict = svm_predict(test_tweet)
+    print("\t - predicted [", predict, "]")
