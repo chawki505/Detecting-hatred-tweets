@@ -9,6 +9,7 @@ from sklearn.naive_bayes import MultinomialNB
 
 # utils
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.svm import SVC
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, classification_report
 
@@ -146,6 +147,18 @@ def nb_score(trainX, trainY, testX, testY):
     return model.score(testX, testY)
 
 
+def svm_predict(trainX, trainY, test_string) :
+  model = SVC()
+  model.fit(trainX, trainY)
+  test= tfdidf_vectorizer.transform([normalisation(test_string)])
+  return model.predict(test)[0]
+
+def svm_score(trainX, trainY, testX, testY) :
+  model = SVC()
+  model.fit(trainX, trainY)
+  return model.score(testX, testY)
+
+
 if __name__ == "__main__":
     X, Y = create_set(dataset_raw_path)
     X = encode_set(X)
@@ -156,19 +169,18 @@ if __name__ == "__main__":
     x_train, x_test, y_train, y_test = train_test_split(X, Y)
 
     print("Avant clean : ", test_tweet)
-    corpus_test = normalisation(test_tweet)
-    print("Apres clean : ", corpus_test)
+    print("Apres clean : ", normalisation(test_tweet))
+
 
     # Testing KNN
     print("Testing KNN")
-    print("tweet : ", test_tweet)
     print("KNN score = ", knn_score(x_train, y_train, x_test, y_test))
-    print("Predicted", knn_predict(x_train, y_train, test_tweet))
-
+    print("Predicted", knn_predict(x_train, y_train, test_tweet), " for \"", test_tweet, "\"")
+    # Testing SVM
+    print("Testing SVM")
+    print("SVM score = ", svm_score(x_train, y_train, x_test, y_test))
+    print("Predicted", svm_predict(x_train, y_train, test_tweet), " for \"", test_tweet, "\"")
     # Testing MB
     print("Testing NB")
-    print("tweet : ", test_tweet)
     print("NB score = ", nb_score(x_train, y_train, x_test, y_test))
-    print("Predicted", nb_predict(x_train, y_train, test_tweet))
-
-    nb_find_best_alpha(x_train, y_train, x_test, y_test)
+    print("Predicted", nb_predict(x_train, y_train, test_tweet), " for \"", test_tweet, "\"")
