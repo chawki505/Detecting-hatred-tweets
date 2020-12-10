@@ -1,16 +1,20 @@
 # encoding=utf8
 
-
-import random
 import sys
 import re
+
+# models
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.naive_bayes import MultinomialNB
+
+# utils
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, classification_report
 
 # for testing
-import pandas as pd
 import matplotlib.pyplot as plt
+import numpy as np
 
 import string
 import nltk
@@ -25,7 +29,7 @@ nltk.download('wordnet')
 from nltk.stem import WordNetLemmatizer
 
 lemm = WordNetLemmatizer()
-tfdidf_vectorizer = TfidfVectorizer(analyzer="word")
+tfdidf_vectorizer = TfidfVectorizer(analyzer="word", max_features=7000)
 
 dataset_raw_path = "data/dataset_raw.csv"
 
@@ -59,6 +63,10 @@ def normalisation(text: str) -> str:
     # remove new line characters
     text = text.replace('\n', '')
 
+    # TODO : remove space
+    text = text.split()
+    text = ' '.join([i for i in text if i != '' or i != ' '])
+
     # remove stopwords
     text = ' '.join([elem for elem in text.split() if elem not in mystopwords])
 
@@ -78,7 +86,7 @@ def normalisation(text: str) -> str:
 def create_set(path):
     set_x = []
     set_y = []
-    for line in open(path, "r").readlines():
+    for line in open(path, "r").readlines()[1:]:
         elem = line.split(",", maxsplit=2)
         set_x.append(normalisation(elem[2]))
         set_y.append(True if elem[1] == "1" else False)
@@ -88,7 +96,15 @@ def create_set(path):
 
 def knn_predict(trainX, trainY, test_string):
     model = KNeighborsClassifier(n_neighbors=1)
-    clf = model.fit(trainX, trainY)
+    model.fit(trainX, trainY)
+    test = tfdidf_vectorizer.transform([normalisation(test_string)])
+    return model.predict(test)[0]
+
+
+# fonction pour predire le label d'un tweet
+def nb_predict(trainX, trainY, test_string):
+    model = MultinomialNB(alpha=0.1)
+    model.fit(trainX, trainY)
     test = tfdidf_vectorizer.transform([normalisation(test_string)])
     return model.predict(test)[0]
 
@@ -103,6 +119,19 @@ def knn_find_best_k(trainX, trainY, testX, testY):
     plt.show()
 
 
+# fonction pour trouver la meilleur valeur de alpha pour notre model avec plot
+def nb_find_best_alpha(trainX, trainY, testX, testY):
+    scores = []
+    alpha = []
+    for i in np.arange(0.1, 1.1, 0.1):
+        model = MultinomialNB(alpha=i)
+        model.fit(trainX, trainY)
+        scores.append(model.score(testX, testY))
+        alpha.append(i)
+    plt.plot(alpha, scores)
+    plt.show()
+
+
 # best K = 1
 def knn_score(trainX, trainY, testX, testY):
     model = KNeighborsClassifier(n_neighbors=1)
@@ -110,12 +139,36 @@ def knn_score(trainX, trainY, testX, testY):
     return model.score(testX, testY)
 
 
+# best alpha = 0.1
+def nb_score(trainX, trainY, testX, testY):
+    model = MultinomialNB(alpha=0.1)
+    model.fit(trainX, trainY)
+    return model.score(testX, testY)
+
+
 if __name__ == "__main__":
     X, Y = create_set(dataset_raw_path)
     X = encode_set(X)
-    x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=0.3)
-    test_tweet = sys.argv[1] if len(sys.argv) > 1 else "white people"
+
+    test_tweet = sys.argv[1] if len(
+        sys.argv) > 1 else "@user why not @user mocked obama for being black.  @user @user @user @user #brexit"
+
+    x_train, x_test, y_train, y_test = train_test_split(X, Y)
+
+    print("Avant clean : ", test_tweet)
+    corpus_test = normalisation(test_tweet)
+    print("Apres clean : ", corpus_test)
+
     # Testing KNN
+    print("Testing KNN")
     print("tweet : ", test_tweet)
     print("KNN score = ", knn_score(x_train, y_train, x_test, y_test))
     print("Predicted", knn_predict(x_train, y_train, test_tweet))
+
+    # Testing MB
+    print("Testing NB")
+    print("tweet : ", test_tweet)
+    print("NB score = ", nb_score(x_train, y_train, x_test, y_test))
+    print("Predicted", nb_predict(x_train, y_train, test_tweet))
+
+    nb_find_best_alpha(x_train, y_train, x_test, y_test)
