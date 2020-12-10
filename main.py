@@ -4,15 +4,15 @@ import sys
 import re
 
 # models
-from nltk import pos_tag, word_tokenize
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import MultinomialNB
+from sklearn.svm import SVC
 
 # utils
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.svm import SVC
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import GridSearchCV
+from nltk import pos_tag, word_tokenize
 
 # for testing
 import matplotlib.pyplot as plt
@@ -34,12 +34,12 @@ nltk.download('punkt', download_dir="cache_nltk/", quiet=True)
 nltk.download('averaged_perceptron_tagger', download_dir="cache_nltk/", quiet=True)
 
 lemm = WordNetLemmatizer()
-tfdidf_vectorizer = TfidfVectorizer(analyzer="word", max_features=7000)
+tfdidf_vectorizer = TfidfVectorizer()
 
 dataset_raw_path = "data/dataset_raw.csv"
 
 knn_model = KNeighborsClassifier(n_neighbors=1)
-nb_model = MultinomialNB(alpha=0.1)
+nb_model = MultinomialNB(alpha=0.2)
 svm_model = SVC(C=10)
 
 
@@ -159,20 +159,27 @@ def svm_predict(test_string):
     return svm_model.predict(test)[0]
 
 
-def knn_find_best_k(test_x, test_y):
+def knn_find_best_k(train_x, train_y, test_x, test_y):
     scores = []
+    k = []
     for i in range(1, 35):
-        scores.append(knn_model.score(test_x, test_y))
-    plt.plot(scores)
+        model = KNeighborsClassifier(n_neighbors=i)
+        model.fit(train_x, train_y)
+        scores.append(model.score(test_x, test_y))
+        k.append(i)
+
+    plt.plot(k, scores)
     plt.show()
 
 
 # function pour trouver la meilleur valeur de alpha pour notre model avec plot
-def nb_find_best_alpha(test_x, test_y):
+def nb_find_best_alpha(train_x, train_y, test_x, test_y):
     scores = []
     alpha = []
     for i in np.arange(0.1, 1.1, 0.1):
-        scores.append(nb_model.score(test_x, test_y))
+        model = MultinomialNB(alpha=i)
+        model.fit(train_x, train_y)
+        scores.append(model.score(test_x, test_y))
         alpha.append(i)
     plt.plot(alpha, scores)
     plt.show()
@@ -180,7 +187,8 @@ def nb_find_best_alpha(test_x, test_y):
 
 def svm_find_best_c(train_x, train_y):
     param_grid_for_grid_search = {'kernel': ['rbf'], 'C': [1, 10]}
-    model = GridSearchCV(svm_model, param_grid_for_grid_search)
+    svm = SVC()
+    model = GridSearchCV(svm, param_grid_for_grid_search)
     model.fit(train_x, train_y)
     # print best parameter after tuning
     print(model.best_params_)
@@ -189,30 +197,44 @@ def svm_find_best_c(train_x, train_y):
 
 
 if __name__ == "__main__":
+    print("Create set X, Y ...")
     X, Y = create_set(dataset_raw_path)
+    print("\t create set X, Y: done !")
+
+    print("\nEncode set X ...")
     X = encode_set(X)
+    print("\t encode set X: done !")
 
     test_tweet = sys.argv[1] if len(
-        sys.argv) > 1 else "@user why not @user mocked obama for being black.  @user @user @user @user #brexit"
+        sys.argv) < 1 else "@user why not @user mocked obama for being black.  @user @user @user @user #brexit"
 
-    x_train, x_test, y_train, y_test = train_test_split(X, Y)
+    print("\nSpliting X in train and test ...")
+    x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=0.20)
+    print("\ttrain, test spliting : done !")
 
+    print("\nCleanning input tweet to predict ...")
+    print("\tavant clean :", test_tweet)
+    print("\tapres clean :", normalisation(test_tweet))
     # init_all(x_train, y_train)
 
     knn_init(x_train, y_train)
     # Testing KNN
-    print("Testing KNN")
-    print("KNN score = ", knn_score(x_test, y_test))
-    print("Predicted", knn_predict(test_tweet), " for \"", test_tweet, "\"")
+    print("\nTesting KNN ...")
+    print("\tknn score = ", round(knn_score(x_test, y_test), 4) * 100, "%")
+    print("\tpredicted [", knn_predict(test_tweet), "] for \"", test_tweet, "\"")
+
+    # knn_find_best_k(x_train, y_train, x_test, y_test)
 
     nb_init(x_train, y_train)
     # Testing MB
-    print("Testing NB")
-    print("NB score = ", nb_score(x_test, y_test))
-    print("Predicted", nb_predict(test_tweet), " for \"", test_tweet, "\"")
+    print("\nTesting NB ...")
+    print("\tnaive bayes score = ", round(nb_score(x_test, y_test), 4) * 100, "%")
+    print("\tpredicted [", nb_predict(test_tweet), "] for \"", test_tweet, "\"")
 
-    # svm_init(x_train, y_train)
+    # nb_find_best_alpha(x_train, y_train, x_test, y_test)
+
+    svm_init(x_train, y_train)
     # Testing SVM
-    # print("Testing SVM")
-    # print("SVM score = ", svm_score(x_test, y_test))
-    # print("Predicted", svm_predict(test_tweet), " for \"", test_tweet, "\"")
+    print("\nTesting SVM ...")
+    print("\tsvm score = ", round(svm_score(x_test, y_test), 4) * 100, "%")
+    print("\tpredicted [", svm_predict(test_tweet), "] for \"", test_tweet, "\"")
