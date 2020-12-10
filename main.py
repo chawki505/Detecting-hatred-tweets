@@ -4,6 +4,7 @@ import sys
 import re
 
 # models
+from nltk import pos_tag, word_tokenize
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import MultinomialNB
 
@@ -11,7 +12,6 @@ from sklearn.naive_bayes import MultinomialNB
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.svm import SVC
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, classification_report
 from sklearn.model_selection import GridSearchCV
 
 # for testing
@@ -22,18 +22,25 @@ import string
 import nltk
 import contractions
 
-nltk.download('stopwords')
+nltk.download('stopwords', download_dir="cache_nltk/", quiet=True)
 from nltk.corpus import stopwords
 
 mystopwords = stopwords.words('english')
 
-nltk.download('wordnet')
+nltk.download('wordnet', download_dir="cache_nltk/", quiet=True)
 from nltk.stem import WordNetLemmatizer
+
+nltk.download('punkt', download_dir="cache_nltk/", quiet=True)
+nltk.download('averaged_perceptron_tagger', download_dir="cache_nltk/", quiet=True)
 
 lemm = WordNetLemmatizer()
 tfdidf_vectorizer = TfidfVectorizer(analyzer="word", max_features=7000)
 
 dataset_raw_path = "data/dataset_raw.csv"
+
+knn_model = KNeighborsClassifier(n_neighbors=1)
+nb_model = MultinomialNB(alpha=0.1)
+svm_model = SVC(C=10)
 
 
 def encode_set(set_to_encode):
@@ -65,15 +72,13 @@ def normalisation(text: str) -> str:
     # remove new line characters
     text = text.replace('\n', '')
 
-    # TODO : remove space
-    text = text.split()
-    text = ' '.join([i for i in text if i != '' or i != ' '])
-
     # remove stopwords
     text = ' '.join([elem for elem in text.split() if elem not in mystopwords])
 
     # Lemmatization
-    text = ' '.join([lemm.lemmatize(word) for word in text.split()])
+    text = ' '.join(
+        [lemm.lemmatize(i, j[0].lower()) if j[0].lower() in ['a', 'n', 'v']
+         else lemm.lemmatize(i) for i, j in pos_tag(word_tokenize(text))])
 
     # remove user
     text = text.replace("user", "")
@@ -81,6 +86,10 @@ def normalisation(text: str) -> str:
     # remove Emojis
     emoji_reg = re.compile("[^A-Za-z ]+")
     text = emoji_reg.sub(r'', text)
+
+    # remove spaces
+    text = text.split()
+    text = ' '.join([i for i in text])
 
     return text
 
@@ -92,83 +101,91 @@ def create_set(path):
         elem = line.split(",", maxsplit=2)
         set_x.append(normalisation(elem[2]))
         set_y.append(True if elem[1] == "1" else False)
-
     return set_x, set_y
 
 
+# fonction init model naive bayes
+def nb_init(test_x, test_y):
+    nb_model.fit(test_x, test_y)
 
-def knn_predict(trainX, trainY, test_string):
-    model = KNeighborsClassifier(n_neighbors=1)
-    model.fit(trainX, trainY)
+
+# fonction init model knn
+def knn_init(test_x, test_y):
+    knn_model.fit(test_x, test_y)
+
+
+# fonction init model scm
+def svm_init(test_x, test_y):
+    svm_model.fit(test_x, test_y)
+
+
+# call init for all model
+def init_all(test_x, test_y):
+    nb_init(test_x, test_y)
+    knn_init(test_x, test_y)
+    svm_init(test_x, test_y)
+
+
+# calcul score naive bayes with best alpha = 0.1
+def nb_score(test_x, test_y):
+    return nb_model.score(test_x, test_y)
+
+
+# calcul score knn with best k = 1
+def knn_score(test_x, test_y):
+    return knn_model.score(test_x, test_y)
+
+
+# calculate score svm with best C = 10
+def svm_score(test_x, test_y):
+    return svm_model.score(test_x, test_y)
+
+
+# function de prediction pour naive bayes
+def nb_predict(test_string):
     test = tfdidf_vectorizer.transform([normalisation(test_string)])
-    return model.predict(test)[0]
+    return nb_model.predict(test)[0]
 
 
-def nb_predict(trainX, trainY, test_string):
-    model = MultinomialNB(alpha=0.1)
-    model.fit(trainX, trainY)
+# function de prediction pour knn
+def knn_predict(test_string):
     test = tfdidf_vectorizer.transform([normalisation(test_string)])
-    return model.predict(test)[0]
-
-def svm_predict(trainX, trainY, test_string) :
-  model = SVC()
-  model.fit(trainX, trainY)
-  test= tfdidf_vectorizer.transform([normalisation(test_string)])
-  return model.predict(test)[0]
+    return knn_model.predict(test)[0]
 
 
-def knn_find_best_k(trainX, trainY, testX, testY):
+# function de prediction pour svm
+def svm_predict(test_string):
+    test = tfdidf_vectorizer.transform([normalisation(test_string)])
+    return svm_model.predict(test)[0]
+
+
+def knn_find_best_k(test_x, test_y):
     scores = []
     for i in range(1, 35):
-        model = KNeighborsClassifier(n_neighbors=i)
-        model.fit(trainX, trainY)
-        scores.append(model.score(testX, testY))
+        scores.append(knn_model.score(test_x, test_y))
     plt.plot(scores)
     plt.show()
 
 
-# fonction pour trouver la meilleur valeur de alpha pour notre model avec plot
-def nb_find_best_alpha(trainX, trainY, testX, testY):
+# function pour trouver la meilleur valeur de alpha pour notre model avec plot
+def nb_find_best_alpha(test_x, test_y):
     scores = []
     alpha = []
     for i in np.arange(0.1, 1.1, 0.1):
-        model = MultinomialNB(alpha=i)
-        model.fit(trainX, trainY)
-        scores.append(model.score(testX, testY))
+        scores.append(nb_model.score(test_x, test_y))
         alpha.append(i)
     plt.plot(alpha, scores)
     plt.show()
 
 
-def svm_find_best_c(trainX, trainY) :
-  svc = SVC()
-  param_grid_for_grid_search = {'kernel': ['rbf'], 'C':[1, 10]}
-  model = GridSearchCV(svc, param_grid_for_grid_search)
-  model.fit(trainX, trainY)
-  # print best parameter after tuning 
-  print(model.best_params_) 
-  # print how our model looks after hyper-parameter tuning 
-  print(model.best_estimator_) 
-
-# best K = 1
-def knn_score(trainX, trainY, testX, testY):
-    model = KNeighborsClassifier(n_neighbors=1)
-    model.fit(trainX, trainY)
-    return model.score(testX, testY)
-
-
-# best alpha = 0.1
-def nb_score(trainX, trainY, testX, testY):
-    model = MultinomialNB(alpha=0.1)
-    model.fit(trainX, trainY)
-    return model.score(testX, testY)
-
-# Best c from [1,10] = 10
-def svm_score(trainX, trainY, testX, testY) :
-  model = SVC(C=10)
-  model.fit(trainX, trainY)
-  return model.score(testX, testY)
-
+def svm_find_best_c(train_x, train_y):
+    param_grid_for_grid_search = {'kernel': ['rbf'], 'C': [1, 10]}
+    model = GridSearchCV(svm_model, param_grid_for_grid_search)
+    model.fit(train_x, train_y)
+    # print best parameter after tuning
+    print(model.best_params_)
+    # print how our model looks after hyper-parameter tuning
+    print(model.best_estimator_)
 
 
 if __name__ == "__main__":
@@ -180,19 +197,22 @@ if __name__ == "__main__":
 
     x_train, x_test, y_train, y_test = train_test_split(X, Y)
 
-    print("Avant clean : ", test_tweet)
-    print("Apres clean : ", normalisation(test_tweet))
+    # init_all(x_train, y_train)
 
-
+    knn_init(x_train, y_train)
     # Testing KNN
     print("Testing KNN")
-    print("KNN score = ", knn_score(x_train, y_train, x_test, y_test))
-    print("Predicted", knn_predict(x_train, y_train, test_tweet), " for \"", test_tweet, "\"")
-    # Testing SVM
-    print("Testing SVM")
-    print("SVM score = ", svm_score(x_train, y_train, x_test, y_test))
-    print("Predicted", svm_predict(x_train, y_train, test_tweet), " for \"", test_tweet, "\"")
+    print("KNN score = ", knn_score(x_test, y_test))
+    print("Predicted", knn_predict(test_tweet), " for \"", test_tweet, "\"")
+
+    nb_init(x_train, y_train)
     # Testing MB
     print("Testing NB")
-    print("NB score = ", nb_score(x_train, y_train, x_test, y_test))
-    print("Predicted", nb_predict(x_train, y_train, test_tweet), " for \"", test_tweet, "\"")
+    print("NB score = ", nb_score(x_test, y_test))
+    print("Predicted", nb_predict(test_tweet), " for \"", test_tweet, "\"")
+
+    # svm_init(x_train, y_train)
+    # Testing SVM
+    # print("Testing SVM")
+    # print("SVM score = ", svm_score(x_test, y_test))
+    # print("Predicted", svm_predict(test_tweet), " for \"", test_tweet, "\"")
