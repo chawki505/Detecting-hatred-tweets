@@ -208,6 +208,7 @@ def svm_find_best_c(train_x, train_y, test_x, test_y):
     scores = []
     c_values_to_try = [i for i in np.arange(0.5, 50, 0.5)]
     for c in c_values_to_try:
+        print("C = ", c)
         model = SVC(C=c)
         model.fit(train_x, train_y)
         scores.append(model.score(test_x, test_y))
@@ -215,7 +216,7 @@ def svm_find_best_c(train_x, train_y, test_x, test_y):
     plt.set_title("Best C search graph")
     plt.set_xlabel('C')
     plt.set_ylabel('Score')
-    plt.show()
+    plt.savefig('graph.png')
 
 
 def show_algorithms_comparison(without_cv=[88, 98, 89], with_cv=[77, 98, 94]):
@@ -279,6 +280,7 @@ if __name__ == "__main__":
     print("\t - after cleaning :", normalisation(test_tweet))
 
     svm_find_best_c(x_train, y_train, x_test, y_test)
+    print("DONE")
 
     # knn_init(x_train, y_train)
     # # Testing KNN
