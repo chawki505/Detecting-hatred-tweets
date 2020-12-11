@@ -2,6 +2,7 @@
 
 import sys
 import re
+from os import path
 
 # models
 from sklearn.neighbors import KNeighborsClassifier
@@ -38,6 +39,7 @@ lemm = WordNetLemmatizer()
 tfdidf_vectorizer = TfidfVectorizer()
 
 dataset_raw_path = "data/dataset_raw.csv"
+dataset_clean_path = "data/dataset_clean.csv"
 
 CONST_BEST_K = 1
 CONST_BEST_C = 10
@@ -99,14 +101,24 @@ def normalisation(text: str) -> str:
     return text
 
 
-def create_set(path):
+def read_dataset(input_file):
     set_x = []
     set_y = []
-    for line in open(path, "r").readlines()[1:]:
-        elem = line.split(",", maxsplit=2)
-        set_x.append(normalisation(elem[2]))
+    for line in open(input_file, "r").readlines()[1:]:
+        elem = line.strip('\n').split(",", maxsplit=2)
+        set_x.append(elem[2])
         set_y.append(True if elem[1] == "1" else False)
     return set_x, set_y
+
+
+def create_clean_dataset(input_path, output_path):
+    file_ouput = open(output_path, "w")
+    file_ouput.writelines("id,label,tweet\n")
+
+    for line in open(input_path, "r").readlines()[1:]:
+        elem = line.split(",", maxsplit=2)
+        file_ouput.write('{},{},{}\n'.format(elem[0], elem[1], normalisation(elem[2])))
+    file_ouput.close()
 
 
 # fonction init model naive bayes
@@ -174,10 +186,12 @@ def knn_find_best_k(train_x, train_y, test_x, test_y):
     for i in range(1, 35):
         model = KNeighborsClassifier(n_neighbors=i)
         model.fit(train_x, train_y)
-        scores.append(model.score(test_x, test_y))
+        scores.append(round(model.score(test_x, test_y) * 100, 2))
         k.append(i)
-
     plt.plot(k, scores)
+    plt.title("Best \"K\" search graph")
+    plt.ylabel("Score %")
+    plt.xlabel("K value")
     plt.show()
 
 
@@ -188,9 +202,12 @@ def nb_find_best_alpha(train_x, train_y, test_x, test_y):
     for i in np.arange(0.1, 1.1, 0.1):
         model = MultinomialNB(alpha=i)
         model.fit(train_x, train_y)
-        scores.append(model.score(test_x, test_y))
+        scores.append(round(model.score(test_x, test_y) * 100, 2))
         alpha.append(i)
     plt.plot(alpha, scores)
+    plt.title("Best \"alpha\" search graph")
+    plt.ylabel("Score %")
+    plt.xlabel("Alpha value")
     plt.show()
 
 
@@ -241,11 +258,18 @@ def show_algorithms_comparison(without_cv, with_cv):
 
 
 if __name__ == "__main__":
-    with_cv = []
-    without_cv = []
 
-    print("Creating set X, Y ...")
-    X, Y = create_set(dataset_raw_path)
+    if not path.exists(dataset_clean_path):
+        if path.exists(dataset_raw_path):
+            print("\nCreating clean dataset ...")
+            create_clean_dataset(dataset_raw_path, dataset_clean_path)
+            print("\t - creating clean dataset : done !")
+        else:
+            print("\nError dataset raw not found !")
+            exit(1)
+
+    print("\nCreating set X, Y ...")
+    X, Y = read_dataset(dataset_clean_path)
     print("\t - creating set X, Y: done !")
 
     print("\nEncoding set X ...")
@@ -263,8 +287,14 @@ if __name__ == "__main__":
     print("\t - before cleaning :", test_tweet)
     print("\t - after cleaning :", normalisation(test_tweet))
 
-    knn_init(x_train, y_train)
+    with_cv = []
+    without_cv = []
+
     # Testing KNN
+    print("\nInit KNN ...")
+    knn_init(x_train, y_train)
+    print("\t - init knn : done !")
+
     print("\nTesting KNN ...")
     score = round(knn_score(x_test, y_test) * 100, 2)
     without_cv.append(score)
@@ -277,8 +307,11 @@ if __name__ == "__main__":
 
     # knn_find_best_k(x_train, y_train, x_test, y_test)
 
-    nb_init(x_train, y_train)
     # Testing MB
+    print("\nInit Naive bayes ...")
+    nb_init(x_train, y_train)
+    print("\t - init naive bayes : done !")
+
     print("\nTesting NB ...")
     score = round(nb_score(x_test, y_test) * 100, 2)
     without_cv.append(score)
@@ -291,8 +324,11 @@ if __name__ == "__main__":
 
     # nb_find_best_alpha(x_train, y_train, x_test, y_test)
 
-    svm_init(x_train, y_train)
     # Testing SVM
+    print("\nInit SVM ...")
+    svm_init(x_train, y_train)
+    print("\t - init svm : done !")
+
     print("\nTesting SVM ...")
     score = round(svm_score(x_test, y_test) * 100, 2)
     without_cv.append(score)
