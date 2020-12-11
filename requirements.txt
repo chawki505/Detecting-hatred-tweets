@@ -1,0 +1,6 @@
+matplotlib~=3.3.3
+numpy~=1.19.4
+nltk~=3.5
+contractions~=0.0.43
+scikit-learn~=0.23.2
+tornado~=6.1

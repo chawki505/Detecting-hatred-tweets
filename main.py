@@ -205,7 +205,7 @@ def svm_find_best_c(train_x, train_y):
     print(model.best_estimator_)
 
 
-def show_algorithms_comparison(without_cv=[88, 98, 89], with_cv=[77, 98, 94]):
+def show_algorithms_comparison(without_cv, with_cv):
     labels = ['K Nearest Neighbors', 'Naive Bayes', 'Support Vector Machine']
 
     x = np.arange(len(labels))  # the label locations
@@ -221,8 +221,6 @@ def show_algorithms_comparison(without_cv=[88, 98, 89], with_cv=[77, 98, 94]):
     ax.set_xticks(x)
     ax.set_xticklabels(labels)
     ax.legend()
-
-    ax.margins(0.2)
 
     def autolabel(rects):
         """Attach a text label above each bar in *rects*, displaying its height."""
