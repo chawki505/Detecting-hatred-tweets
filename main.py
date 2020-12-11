@@ -23,16 +23,16 @@ import string
 import nltk
 import contractions
 
-nltk.download('stopwords', download_dir="cache_nltk/", quiet=True)
+nltk.download('stopwords', quiet=True)
 from nltk.corpus import stopwords
 
 mystopwords = stopwords.words('english')
 
-nltk.download('wordnet', download_dir="cache_nltk/", quiet=True)
+nltk.download('wordnet', quiet=True)
 from nltk.stem import WordNetLemmatizer
 
-nltk.download('punkt', download_dir="cache_nltk/", quiet=True)
-nltk.download('averaged_perceptron_tagger', download_dir="cache_nltk/", quiet=True)
+nltk.download('punkt', quiet=True)
+nltk.download('averaged_perceptron_tagger', quiet=True)
 
 lemm = WordNetLemmatizer()
 tfdidf_vectorizer = TfidfVectorizer()
@@ -85,7 +85,7 @@ def normalisation(text: str) -> str:
         [lemm.lemmatize(i, j[0].lower()) if j[0].lower() in ['a', 'n', 'v']
          else lemm.lemmatize(i) for i, j in pos_tag(word_tokenize(text))])
 
-    # remove user
+    # remove usergi
     text = text.replace("user", "")
 
     # remove Emojis
