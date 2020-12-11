@@ -45,7 +45,7 @@ CONST_BEST_ALPHA = 0.2
 
 knn_model = KNeighborsClassifier(n_neighbors=CONST_BEST_K)
 nb_model = MultinomialNB(alpha=CONST_BEST_ALPHA)
-svm_model = SVC(C=CONST_BEST_C, kernel='linear')
+svm_model = SVC(C=CONST_BEST_C)
 
 
 def encode_set(set_to_encode):
@@ -194,7 +194,7 @@ def nb_find_best_alpha(train_x, train_y, test_x, test_y):
     plt.show()
 
 
-def svm_find_best_c(train_x, train_y):
+def svm_find_best_c_grid_search(train_x, train_y):
     param_grid_for_grid_search = {'kernel': ['rbf'], 'C': [1, 10]}
     svm = SVC()
     model = GridSearchCV(svm, param_grid_for_grid_search)
@@ -203,6 +203,19 @@ def svm_find_best_c(train_x, train_y):
     print(model.best_params_)
     # print how our model looks after hyper-parameter tuning
     print(model.best_estimator_)
+
+def svm_find_best_c(train_x, train_y, test_x, test_y):
+    scores = []
+    c_values_to_try = [i for i in np.arange(0.5, 50, 0.5)]
+    for c in c_values_to_try:
+        model = SVC(C=c)
+        model.fit(train_x, train_y)
+        scores.append(model.score(test_x, test_y))
+    plt.plot(c_values_to_try, scores)
+    plt.set_title("Best C search graph")
+    plt.set_xlabel('C')
+    plt.set_ylabel('Score')
+    plt.show()
 
 
 def show_algorithms_comparison(without_cv=[88, 98, 89], with_cv=[77, 98, 94]):
@@ -265,44 +278,46 @@ if __name__ == "__main__":
     print("\t - before cleaning :", test_tweet)
     print("\t - after cleaning :", normalisation(test_tweet))
 
-    knn_init(x_train, y_train)
-    # Testing KNN
-    print("\nTesting KNN ...")
-    score = round(knn_score(x_test, y_test) * 100, 2)
-    without_cv.append(score)
-    print("\t - knn score = ", score, "%")
-    score = round(algo_crossval_score(KNeighborsClassifier(n_neighbors=CONST_BEST_K), X, Y) * 100, 2)
-    with_cv.append(score)
-    print("\t - knn cross validation score = ", score, "%")
-    predict = knn_predict(test_tweet)
-    print("\t - predicted [", predict, "]")
+    svm_find_best_c(x_train, y_train, x_test, y_test)
 
-    # knn_find_best_k(x_train, y_train, x_test, y_test)
+    # knn_init(x_train, y_train)
+    # # Testing KNN
+    # print("\nTesting KNN ...")
+    # score = round(knn_score(x_test, y_test) * 100, 2)
+    # without_cv.append(score)
+    # print("\t - knn score = ", score, "%")
+    # score = round(algo_crossval_score(KNeighborsClassifier(n_neighbors=CONST_BEST_K), X, Y) * 100, 2)
+    # with_cv.append(score)
+    # print("\t - knn cross validation score = ", score, "%")
+    # predict = knn_predict(test_tweet)
+    # print("\t - predicted [", predict, "]")
 
-    nb_init(x_train, y_train)
-    # Testing MB
-    print("\nTesting NB ...")
-    score = round(nb_score(x_test, y_test) * 100, 2)
-    without_cv.append(score)
-    print("\t - naive bayes score = ", score, "%")
-    score = round(algo_crossval_score(MultinomialNB(alpha=CONST_BEST_ALPHA), X, Y) * 100, 2)
-    with_cv.append(score)
-    print("\t - naive bayes cross validation score = ", score, "%")
-    predict = nb_predict(test_tweet)
-    print("\t - predicted [", predict, "]")
+    # # knn_find_best_k(x_train, y_train, x_test, y_test)
 
-    # nb_find_best_alpha(x_train, y_train, x_test, y_test)
+    # nb_init(x_train, y_train)
+    # # Testing MB
+    # print("\nTesting NB ...")
+    # score = round(nb_score(x_test, y_test) * 100, 2)
+    # without_cv.append(score)
+    # print("\t - naive bayes score = ", score, "%")
+    # score = round(algo_crossval_score(MultinomialNB(alpha=CONST_BEST_ALPHA), X, Y) * 100, 2)
+    # with_cv.append(score)
+    # print("\t - naive bayes cross validation score = ", score, "%")
+    # predict = nb_predict(test_tweet)
+    # print("\t - predicted [", predict, "]")
 
-    svm_init(x_train, y_train)
-    # Testing SVM
-    print("\nTesting SVM ...")
-    score = round(svm_score(x_test, y_test) * 100, 2)
-    without_cv.append(score)
-    print("\t - svm score = ", score, "%")
-    score = round(algo_crossval_score(SVC(kernel='linear', C=CONST_BEST_C), X, Y) * 100, 2)
-    with_cv.append(score)
-    print("\t - svm cross validation score = ", score, "%")
-    predict = svm_predict(test_tweet)
-    print("\t - predicted [", predict, "]")
+    # # nb_find_best_alpha(x_train, y_train, x_test, y_test)
 
-    show_algorithms_comparison(without_cv, with_cv)
+    # svm_init(x_train, y_train)
+    # # Testing SVM
+    # print("\nTesting SVM ...")
+    # score = round(svm_score(x_test, y_test) * 100, 2)
+    # without_cv.append(score)
+    # print("\t - svm score = ", score, "%")
+    # score = round(algo_crossval_score(SVC(C=CONST_BEST_C), X, Y) * 100, 2)
+    # with_cv.append(score)
+    # print("\t - svm cross validation score = ", score, "%")
+    # predict = svm_predict(test_tweet)
+    # print("\t - predicted [", predict, "]")
+
+    # show_algorithms_comparison(without_cv, with_cv)
