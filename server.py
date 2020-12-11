@@ -6,15 +6,14 @@ import tornado.web
 from main import *
 
 print("CONFIGURING DATASET")
-X, Y = create_set(dataset_raw_path)
+X, Y = read_dataset(dataset_clean_path)
 X = encode_set(X)
 x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=0.30)
 init_all(x_train, y_train)
 print("DONE")
 
-
 knn = round(knn_score(x_test, y_test), 4) * 100
-knn_cv = round(algo_crossval_score(KNeighborsClassifier(n_neighbors=CONST_BEST_K), X, Y) * 100, 2) 
+knn_cv = round(algo_crossval_score(KNeighborsClassifier(n_neighbors=CONST_BEST_K), X, Y) * 100, 2)
 print("KNN DONE")
 nb = round(nb_score(x_test, y_test), 4) * 100
 nb_cv = round(algo_crossval_score(MultinomialNB(alpha=CONST_BEST_ALPHA), X, Y) * 100, 2)
