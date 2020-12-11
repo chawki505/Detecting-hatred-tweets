@@ -213,9 +213,9 @@ def svm_find_best_c(train_x, train_y, test_x, test_y):
         model.fit(train_x, train_y)
         scores.append(model.score(test_x, test_y))
     plt.plot(c_values_to_try, scores)
-    plt.set_title("Best C search graph")
-    plt.set_xlabel('C')
-    plt.set_ylabel('Score')
+    plt.title("Best \"C\" search graph")
+    plt.xlabel('C value')
+    plt.ylabel('Score')
     plt.savefig('graph.png')
 
 
