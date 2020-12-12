@@ -4,6 +4,10 @@ import sys
 import re
 from os import path
 
+# for testing
+import matplotlib.pyplot as plt
+import numpy as np
+
 # models
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import MultinomialNB
@@ -15,10 +19,6 @@ from nltk import pos_tag, word_tokenize
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import GridSearchCV
-
-# for testing
-import matplotlib.pyplot as plt
-import numpy as np
 
 import string
 import nltk
