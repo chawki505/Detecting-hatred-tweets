@@ -12,7 +12,7 @@
 #### 1- Installation des dépendances
 
 ```shell
-$ pip3 install requirements.txt 
+$ pip3 install -r requirements.txt 
 ```
 
 #### 2- Execution en local
